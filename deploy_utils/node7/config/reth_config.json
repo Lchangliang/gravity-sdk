@@ -2,7 +2,7 @@
     "reth_args": {
         "chain": "/home/gravity/lightman/gravity-sdk/7.json",
         "http": "",
-        "http.port": 8551,
+        "http.port": 18551,
         "http.corsdomain": "*",
         "http.api": "debug,eth,net,trace,txpool,web3,rpc",
         "http.addr": "0.0.0.0",
