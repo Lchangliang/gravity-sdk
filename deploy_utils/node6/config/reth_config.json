@@ -8,7 +8,7 @@
         "http.addr": "0.0.0.0",
         "dev": "",
         "port": 12029,
-        "authrpc.port": 8556,
+        "authrpc.port": 8756,
         "authrpc.addr": "0.0.0.0",
         "metrics": "0.0.0.0:9006",
         "log.file.filter": "info",
