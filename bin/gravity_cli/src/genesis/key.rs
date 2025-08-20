@@ -62,7 +62,8 @@ impl Executable for GenerateKey {
 
         let account_private_key = key_gen.generate_ed25519_private_key();
         let account_address = network_private_key.public_key();
-        println!("The account_address is {:?}", account_address);
+        println!("The account_address is {}", account_address);
+        println!("The last 20bit account_address is 0x{}", hex::encode(&account_address.as_slice()[12..]));
         let indentity = ValidatorIndentity {
             account_address: account_address.to_string(),
             account_private_key: hex::encode(account_private_key.to_bytes()),
