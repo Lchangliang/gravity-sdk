@@ -1,12 +1,13 @@
 use clap::Parser;
 use gaptos::{
     api_types::u256_define::AccountAddress,
-    aptos_crypto::{ed25519::{self, Ed25519PublicKey}, ValidCryptoMaterial},
+    aptos_crypto::{bls12381, ed25519::{Ed25519PrivateKey, Ed25519PublicKey}, test_utils::KeyPair, x25519, PrivateKey, Uniform, ValidCryptoMaterial},
     aptos_keygen::KeyGen,
     aptos_types::transaction::authenticator::AuthenticationKey,
 };
+
+use rand::thread_rng;
 use std::path::PathBuf;
-use tracing::info;
 use std::fs;
 
 use crate::command::Executable;
@@ -54,29 +55,30 @@ impl GenerateKey {
 // TODO(gravity_lightman): account_private_key is aptos key， not reth
 impl Executable for GenerateKey {
     fn execute(self) -> Result<(), anyhow::Error> {
-        info!("--- Generate Key Start ---");
-        let mut key_gen = self.key_generator()?;
-        let network_private_key = key_gen.generate_x25519_private_key()?;
-        info!("The network_private_key is {:?}", network_private_key);
-        let consensus_private_key = key_gen.generate_bls12381_private_key();
-        info!("The consensus_private_key is {:?}", consensus_private_key);
+        println!("--- Generate Key Start ---");
+        let mut rng = thread_rng();
+        let network_private_key = x25519::PrivateKey::generate(&mut rng);
+        println!("The network_private_key is {:?}", network_private_key);
+        let consensus_private_key = bls12381::PrivateKey::generate(&mut rng);
+        println!("The consensus_private_key is {:?}", consensus_private_key);
+        println!("The consensus_public_key is {:?}", consensus_private_key.public_key().to_string());
 
-        let account_private_key = key_gen.generate_ed25519_private_key();
-        info!("The account_private_key is {:?}", account_private_key);
+        let account_kp = KeyPair::<Ed25519PrivateKey, Ed25519PublicKey>::generate(&mut rng);
+        println!("The account_private_key is {:?}", account_kp);
         let account_address =
-            account_address_from_public_key(&ed25519::Ed25519PublicKey::from(&account_private_key));
-        info!("The account_address is {:?}", account_address);
+            account_address_from_public_key(&account_kp.public_key);
+        println!("The account_address is {:?}", account_address);
         let indentity = ValidatorIndentity {
             account_address: account_address.to_string(),
-            account_private_key: hex::encode(account_private_key.to_bytes()),
+            account_private_key: hex::encode(account_kp.private_key.to_bytes()),
             consensus_private_key: hex::encode(consensus_private_key.to_bytes()),
             network_private_key: hex::encode(network_private_key.to_bytes()),
         };
 
-        info!("--- Write Output File ---");
+        println!("--- Write Output File ---");
         let yaml_string = serde_yaml::to_string(&indentity)?;
         fs::write(self.output_file, yaml_string)?;
-        info!("--- Generate Key Success ---");
+        println!("--- Generate Key Success ---");
         Ok(())
     }
 }
