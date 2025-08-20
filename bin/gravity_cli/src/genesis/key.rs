@@ -64,12 +64,13 @@ impl Executable for GenerateKey {
         println!("The consensus_public_key is {:?}", consensus_private_key.public_key().to_string());
 
         let account_kp = KeyPair::<Ed25519PrivateKey, Ed25519PublicKey>::generate(&mut rng);
-        println!("The account_private_key is {:?}", account_kp);
-        let account_address =
-            account_address_from_public_key(&account_kp.public_key);
-        println!("The account_address is {:?}", account_address);
+        println!("The account_private_key is {:?}", account_kp.private_key);
+        println!("The account_public_key is {:?}", account_kp.public_key);
+        // let account_address =
+        //     account_address_from_public_key(&account_kp.public_key);
+        // println!("The account_address is {:?}", account_address);
         let indentity = ValidatorIndentity {
-            account_address: account_address.to_string(),
+            account_address: account_kp.public_key.to_string(),
             account_private_key: hex::encode(account_kp.private_key.to_bytes()),
             consensus_private_key: hex::encode(consensus_private_key.to_bytes()),
             network_private_key: hex::encode(network_private_key.to_bytes()),
