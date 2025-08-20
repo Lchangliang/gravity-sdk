@@ -36,7 +36,7 @@ consensus:
 
 validator_network:
   network_id: validator
-  listen_address: "/ip4/127.0.0.1/tcp/2029"
+  listen_address: "/ip4/127.0.0.1/tcp/2028"
   discovery_method: 
     onchain
   mutual_authentication: true
