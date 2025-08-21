@@ -1,6 +1,6 @@
 {
     "reth_args": {
-        "chain": "/home/gravity/lightman/gravity-sdk/16.json",
+        "chain": "/home/gravity/lightman/gravity-sdk/19.json",
         "http": "",
         "http.port": 8557,
         "http.corsdomain": "*",
