@@ -84,7 +84,7 @@ async fn retrieve_from_execution_routine(
     mempool: Arc<Mutex<CoreMempool>>,
 ) {
     info!("start retrieve_from_execution_routine");
-    let mempool_retrieve_duration = std::env::var("MEMPOOL_RETRIEVE_DURATION").unwrap_or_default().parse::<u64>().unwrap_or(1000);
+    let mempool_retrieve_duration = std::env::var("MEMPOOL_RETRIEVE_DURATION").unwrap_or_default().parse::<u64>().unwrap_or(500);
         
     loop {
         match get_block_buffer_manager().pop_txns(30000, 10_000_000_000).await {
