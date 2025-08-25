@@ -383,6 +383,9 @@ impl StorageWriteProxy {
     }
 
     pub async fn init_block_buffer_manager(&self, epoch: u64, latest_block_number: u64) {
+        if get_block_buffer_manager().is_ready() {
+            return;
+        }
         let start_block_number = if latest_block_number > RECENT_BLOCKS_RANGE {
             latest_block_number - RECENT_BLOCKS_RANGE
         } else {
