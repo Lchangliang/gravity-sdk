@@ -17,7 +17,7 @@ use tokio::{
         mpsc::{self, Receiver, Sender},
         Mutex,
     },
-    time::Instant,
+    time::{sleep, Instant},
 };
 use tracing::{info, warn};
 
@@ -700,8 +700,9 @@ impl BlockBufferManager {
     }
 
     pub async fn block_number_to_block_id(&self) -> HashMap<u64, BlockId> {
-        if !self.is_ready() {
-            panic!("Buffer is not ready when get block_number_to_block_id");
+        while !self.is_ready() {
+            info!("Buffer is not ready when get block_number_to_block_id");
+            sleep(Duration::from_secs(1)).await;
         }
         let block_state_machine = self.block_state_machine.lock().await;
         block_state_machine.block_number_to_block_id.clone()
