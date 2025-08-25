@@ -2,12 +2,15 @@
 // Parts of the project are originally copyright © Meta Platforms, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::consensusdb::BlockNumberSchema;
 use crate::{consensusdb::ConsensusDB, epoch_manager::LivenessStorageData, error::DbError};
 use anyhow::{format_err, Result};
 use aptos_consensus_types::{
     block::Block, quorum_cert::QuorumCert, timeout_2chain::TwoChainTimeoutCertificate, vote::Vote,
     vote_data::VoteData, wrapped_ledger_info::WrappedLedgerInfo,
 };
+use gaptos::api_types::u256_define::BlockId;
+use gaptos::aptos_crypto::hash::GENESIS_BLOCK_ID;
 use gaptos::aptos_crypto::{
     hash::ACCUMULATOR_PLACEHOLDER_HASH,
     HashValue,
@@ -21,12 +24,15 @@ use gaptos::aptos_types::{
 use async_trait::async_trait;
 use block_buffer_manager::get_block_buffer_manager;
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::{
     cmp::max,
     collections::HashSet,
     fmt::Debug,
     sync::Arc,
 };
+
+const RECENT_BLOCKS_RANGE: u64 = 256;
 
 /// PersistentLivenessStorage is essential for maintaining liveness when a node crashes.  Specifically,
 /// upon a restart, a correct node will recover.  Even if all nodes crash, liveness is
@@ -375,6 +381,52 @@ impl StorageWriteProxy {
         // let db = Arc::new(ConsensusDB::new(config.storage.dir()));
         StorageWriteProxy { db, aptos_db }
     }
+
+    pub async fn init_block_buffer_manager(&self, epoch: u64, latest_block_number: u64) {
+        let start_block_number = if latest_block_number > RECENT_BLOCKS_RANGE {
+            latest_block_number - RECENT_BLOCKS_RANGE
+        } else {
+            0
+        };
+
+        let mut block_number_to_block_id = HashMap::new();
+
+        for epoch_i in (1..=epoch).rev() {
+            let start_key = (epoch_i, HashValue::zero());
+            let end_key = (epoch_i, HashValue::new([u8::MAX; HashValue::LENGTH]));
+            let mut has_larger = false;
+            self.db
+                .get_range::<BlockNumberSchema>(&start_key, &end_key)
+                .unwrap()
+                .into_iter()
+                .filter(|(_, block_number)| block_number >= &start_block_number)
+                .for_each(|((epoch, block_id), block_number)| {
+                    has_larger = true;
+                    if !block_number_to_block_id.contains_key(&block_number) {
+                        block_number_to_block_id
+                            .insert(block_number, (epoch, BlockId::from_bytes(block_id.as_slice())));
+                    } else {
+                        let (cur_epoch, _) = block_number_to_block_id.get(&block_number).unwrap();
+                        if *cur_epoch < epoch {
+                            block_number_to_block_id
+                                .insert(block_number, (epoch, BlockId::from_bytes(block_id.as_slice())));
+                        }
+                    }
+                });
+            if !has_larger {
+                break;
+            }
+        }
+        let mut block_number_to_block_id: HashMap<_, _> = block_number_to_block_id
+            .into_iter()
+            .map(|(block_number, (_, block_id))| (block_number, block_id))
+            .collect();
+        if start_block_number == 0 {
+            block_number_to_block_id.insert(0u64, BlockId::from_bytes(GENESIS_BLOCK_ID.as_slice()));
+        }
+        get_block_buffer_manager().init(latest_block_number, block_number_to_block_id).await;
+    }
+
 }
 
 #[async_trait]
@@ -404,10 +456,13 @@ impl PersistentLivenessStorage for StorageWriteProxy {
         LedgerRecoveryData::new(latest_ledger_info)
     }
 
+
     async fn start(&self, order_vote_enabled: bool, epoch: u64) -> LivenessStorageData {
         info!("Start consensus recovery.");
         let latest_block_number = self.latest_commit_block_number().await;
         info!("The execution_latest_block_number is {}, epoch is {}", latest_block_number, epoch);
+        // self.init_block_buffer_manager(epoch, latest_block_number).await;
+
         let raw_data =
             self.db.get_data(latest_block_number, epoch).expect("unable to recover consensus data");
 

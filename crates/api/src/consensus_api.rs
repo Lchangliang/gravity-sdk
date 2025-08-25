@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     bootstrap::{
-        init_block_buffer_manager, init_mempool, init_network_interfaces, init_peers_and_metadata,
+        init_mempool, init_network_interfaces, init_peers_and_metadata,
         start_consensus, start_node_inspection_service,
     },
     consensus_mempool_handler::{ConsensusToMempoolHandler, MempoolNotificationHandler},
@@ -156,7 +156,7 @@ impl ConsensusEngine {
             peers_and_metadata,
         );
         runtimes.extend(mempool_runtime);
-        init_block_buffer_manager(&consensus_db, latest_block_number).await;
+
         let mut args = ConsensusAdapterArgs::new(consensus_db);
         let (consensus_runtime, _, _) = start_consensus(
             &node_config,

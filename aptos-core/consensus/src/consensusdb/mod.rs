@@ -42,7 +42,6 @@ use std::{
 
 /// The name of the consensus db file
 pub const CONSENSUS_DB_NAME: &str = "consensus_db";
-const RECENT_BLOCKS_RANGE: u64 = 256;
 
 /// Creates new physical DB checkpoint in directory specified by `checkpoint_path`.
 pub fn create_checkpoint<P: AsRef<Path> + Clone>(db_path: P, checkpoint_path: P) -> Result<()> {

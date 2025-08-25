@@ -37,7 +37,6 @@ use gaptos::aptos_validator_transaction_pool::VTxnPoolState;
 use serde::{Deserialize, Serialize};
 use tokio::{runtime::Runtime, sync::Mutex};
 
-const RECENT_BLOCKS_RANGE: u64 = 256;
 
 pub struct ApplicationNetworkInterfaces<T> {
     pub network_client: NetworkClient<T>,
@@ -165,39 +164,4 @@ pub fn init_peers_and_metadata(
     let network_ids = extract_network_ids(node_config);
     let peers_and_metadata = PeersAndMetadata::new(&network_ids);
     peers_and_metadata
-}
-
-pub async fn init_block_buffer_manager(consensus_db: &Arc<ConsensusDB>, latest_block_number: u64) {
-    let start_block_number = if latest_block_number > RECENT_BLOCKS_RANGE {
-        latest_block_number - RECENT_BLOCKS_RANGE
-    } else {
-        0
-    };
-
-    let mut block_number_to_block_id = HashMap::new();
-    consensus_db
-        .get_all::<BlockNumberSchema>()
-        .unwrap()
-        .into_iter()
-        .filter(|(_, block_number)| block_number >= &start_block_number)
-        .for_each(|((epoch, block_id), block_number)| {
-            if !block_number_to_block_id.contains_key(&block_number) {
-                block_number_to_block_id
-                    .insert(block_number, (epoch, BlockId::from_bytes(block_id.as_slice())));
-            } else {
-                let (cur_epoch, _) = block_number_to_block_id.get(&block_number).unwrap();
-                if *cur_epoch < epoch {
-                    block_number_to_block_id
-                        .insert(block_number, (epoch, BlockId::from_bytes(block_id.as_slice())));
-                }
-            }
-        });
-    let mut block_number_to_block_id: HashMap<_, _> = block_number_to_block_id
-        .into_iter()
-        .map(|(block_number, (_, block_id))| (block_number, block_id))
-        .collect();
-    if start_block_number == 0 {
-        block_number_to_block_id.insert(0u64, BlockId::from_bytes(GENESIS_BLOCK_ID.as_slice()));
-    }
-    get_block_buffer_manager().init(latest_block_number, block_number_to_block_id).await;
 }
