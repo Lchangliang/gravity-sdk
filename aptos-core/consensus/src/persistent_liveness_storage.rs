@@ -461,7 +461,7 @@ impl PersistentLivenessStorage for StorageWriteProxy {
         info!("Start consensus recovery.");
         let latest_block_number = self.latest_commit_block_number().await;
         info!("The execution_latest_block_number is {}, epoch is {}", latest_block_number, epoch);
-        // self.init_block_buffer_manager(epoch, latest_block_number).await;
+        self.init_block_buffer_manager(epoch, latest_block_number).await;
 
         let raw_data =
             self.db.get_data(latest_block_number, epoch).expect("unable to recover consensus data");
