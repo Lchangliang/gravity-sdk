@@ -319,6 +319,15 @@ impl ConsensusDB {
     pub fn get_qc_range(&self, start_key: &(u64, HashValue), end_key: &(u64, HashValue)) -> Result<Vec<QuorumCert>, DbError> {
         Ok(self.get_range::<QCSchema>(start_key, end_key)?.into_iter().map(|(_, value)| value).collect())
     }
+
+    pub fn get_max_epoch(&self) -> u64 {
+        let mut iter = self.db.rev_iter::<BlockSchema>().unwrap();
+        let max_epoch = match iter.next() {
+            Some(Ok(((epoch, _), _))) => epoch,
+            _ => 1,
+        };
+        max_epoch
+    }
 }
 
 include!("include/reader.rs");
