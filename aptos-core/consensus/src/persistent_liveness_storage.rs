@@ -462,9 +462,10 @@ impl PersistentLivenessStorage for StorageWriteProxy {
 
     async fn start(&self, order_vote_enabled: bool, epoch: u64) -> LivenessStorageData {
         info!("Start consensus recovery.");
+        self.init_block_buffer_manager(epoch, latest_block_number).await;
+
         let latest_block_number = self.latest_commit_block_number().await;
         info!("The execution_latest_block_number is {}, epoch is {}", latest_block_number, epoch);
-        self.init_block_buffer_manager(epoch, latest_block_number).await;
 
         let raw_data =
             self.db.get_data(latest_block_number, epoch).expect("unable to recover consensus data");
