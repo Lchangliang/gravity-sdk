@@ -109,8 +109,8 @@ impl<EthApi: RethEthCall> RethCli<EthApi> {
             pool: args.pool,
             txn_cache: Mutex::new(HashMap::new()),
             txn_batch_size: 2000,
-            txn_check_interval: std::time::Duration::from_millis(50),
-            txn_pool_interval: std::time::Duration::from_millis(50),
+            txn_check_interval: std::time::Duration::from_millis(10),
+            txn_pool_interval: std::time::Duration::from_millis(10),
             address_init_nonce_cache: Mutex::new(HashMap::new()),
         }
     }
