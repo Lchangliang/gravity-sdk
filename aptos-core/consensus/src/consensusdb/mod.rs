@@ -345,12 +345,16 @@ impl ConsensusDB {
 
     pub fn get_max_epoch(&self) -> u64 {
         let mut iter = self.db.rev_iter::<BlockSchema>().unwrap();
+        iter.seek_to_last(); // 反向迭代器需要先定位到最后一个元素
         let max_epoch = match iter.next() {
             Some(Ok(((epoch, _), block))) => {
                 info!("get max epoch from db, block number is {:?}, block id is {}", block.block_number(), block.id());
                 epoch
             },
-            _ => 1,
+            _ => {
+                info!("get_max_epoch error");
+                1
+            },
         };
         loop {
             match iter.next() {
