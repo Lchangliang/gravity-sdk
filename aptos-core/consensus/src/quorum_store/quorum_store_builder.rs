@@ -384,6 +384,7 @@ impl InnerBuilder {
         spawn_named!("batch_serve", async move {
             info!(epoch = epoch, "Batch retrieval task starts");
             while let Some(rpc_request) = batch_retrieval_rx.next().await {
+                info!("lightman0917 batch retrieval {:?}", rpc_request);
                 counters::RECEIVED_BATCH_REQUEST_COUNT.inc();
                 let response = if let Ok(value) =
                     batch_store.get_batch_from_local(&(rpc_request.req.epoch(), rpc_request.req.digest()))
