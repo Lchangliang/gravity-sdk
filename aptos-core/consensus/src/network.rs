@@ -480,6 +480,7 @@ impl QuorumStoreSender for NetworkSender {
     ) -> anyhow::Result<BatchResponse> {
         let request_digest = request.digest();
         let msg = ConsensusMsg::BatchRequestMsg(Box::new(request));
+        info!("lightman0917 request_batch {} {:?}", recipient, msg);
         let response = self.send_rpc(recipient, msg, timeout).await?;
         match response {
             // TODO: deprecated, remove after another release (likely v1.11)
@@ -812,10 +813,10 @@ impl NetworkTask {
                             })
                         },
                         ConsensusMsg::BatchRequestMsg(request) => {
-                            debug!(
+                            info!(
                                 remote_peer = peer_id,
                                 event = LogEvent::ReceiveBatchRetrieval,
-                                "{}",
+                                "lighman0917 batch_request {}",
                                 request
                             );
                             IncomingRpcRequest::BatchRetrieval(IncomingBatchRetrievalRequest {
