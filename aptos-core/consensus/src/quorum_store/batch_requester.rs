@@ -207,8 +207,8 @@ impl<T: QuorumStoreSender + Sync + 'static> BatchRequester<T> {
                 }
             }
             counters::RECEIVED_BATCH_REQUEST_TIMEOUT_COUNT.inc();
-            debug!("QS: batch request timed out, digest:{}", digest);
-            request_state.serve_request(digest, None);
+            debug!("QS: batch request timed out, digest:{}", key.1);
+            request_state.serve_request(key.1, None);
             None
         })
     }
