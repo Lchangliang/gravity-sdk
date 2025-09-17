@@ -80,8 +80,9 @@ impl QuorumStoreStorage for QuorumStoreDB {
     }
 
     fn save_batch(&self, batch: PersistedValue) -> Result<(), DbError> {
-        trace!(
-            "QS: db persists digest {} expiration {:?}",
+        info!(
+            "lightman0917: db persists epoch {} digest {} expiration {:?}",
+            batch.epoch(),
             batch.digest(),
             batch.expiration()
         );
@@ -89,6 +90,11 @@ impl QuorumStoreStorage for QuorumStoreDB {
     }
 
     fn get_batch(&self, key: &(u64, HashValue)) -> Result<Option<PersistedValue>, DbError> {
+        info!(
+            "lightman0917: db gets epoch {} digest {}",
+            key.0,
+            key.1
+        );
         Ok(self.db.get::<BatchSchema>(key)?)
     }
 
