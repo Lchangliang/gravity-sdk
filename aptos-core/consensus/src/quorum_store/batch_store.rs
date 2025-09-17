@@ -510,7 +510,7 @@ impl<T: QuorumStoreSender + Clone + Send + Sync + 'static> BatchReader for Batch
                 counters::MISSED_BATCHES_COUNT.inc();
                 let subscriber_rx = batch_store.subscribe(&key);
                 if let Some((batch_info, payload)) = batch_requester
-                    .request_batch(key.1, expiration, signers, tx, subscriber_rx)
+                    .request_batch(key, expiration, signers, tx, subscriber_rx)
                     .await
                 {
                     batch_store.persist(vec![PersistedValue::new(batch_info, Some(payload))]);
