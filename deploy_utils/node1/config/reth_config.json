@@ -1,6 +1,6 @@
 {
     "reth_args": {
-        "chain": "dev",
+        "chain": "/Users/lightman/repos/gravity-sdk/kenji.json",
         "http": "",
         "http.port": 8545,
         "http.corsdomain": "*",
