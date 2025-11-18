@@ -43,9 +43,7 @@ use once_cell::sync::Lazy;
 
 #[cfg(test)]
 use std::collections::VecDeque;
-#[cfg(any(test, feature = "fuzzing"))]
 use std::sync::atomic::AtomicBool;
-#[cfg(any(test, feature = "fuzzing"))]
 use std::sync::atomic::Ordering;
 use std::{collections::BTreeMap, io::Read, sync::Arc, time::Duration};
 
@@ -124,6 +122,7 @@ pub struct BlockStore {
     is_validator: bool,
     pending_blocks: Arc<Mutex<PendingBlocks>>,
     enable_randomness: bool,
+    in_recovery_mode: AtomicBool,
 }
 
 impl BlockStore {
@@ -214,6 +213,7 @@ impl BlockStore {
     }
 
     async fn recover_blocks(&self) {
+        self.in_recovery_mode.store(true, Ordering::SeqCst);
         RECOVERY_GAUGE.set_with(&[], 1);
         // reproduce the same batches (important for the commit phase)
         let mut certs = self.inner.read().get_all_quorum_certs_with_commit_info();
@@ -227,6 +227,7 @@ impl BlockStore {
             }
         }
         RECOVERY_GAUGE.set_with(&[], 0);
+        self.in_recovery_mode.store(false, Ordering::SeqCst);
     }
 
     /// Returns the WrappedLedgerInfo for fast_forward_sync.
@@ -314,6 +315,7 @@ impl BlockStore {
             is_validator,
             pending_blocks,
             enable_randomness,
+            in_recovery_mode: AtomicBool::new(false),
         };
 
         for block in blocks {
@@ -486,6 +488,10 @@ impl BlockStore {
                 commit_decision,
             );
         } else {
+            if self.in_recovery_mode.load(Ordering::SeqCst) {
+                info!("in recovery mode, skip finalize_order");
+                return Ok(());
+            }
             info!("send the blocks to execution {:?}", blocks_to_commit);
             self.execution_client
                 .finalize_order(
