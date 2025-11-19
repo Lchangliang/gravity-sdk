@@ -122,7 +122,6 @@ pub struct BlockStore {
     is_validator: bool,
     pending_blocks: Arc<Mutex<PendingBlocks>>,
     enable_randomness: bool,
-    in_recovery_mode: AtomicBool,
 }
 
 impl BlockStore {
@@ -213,7 +212,6 @@ impl BlockStore {
     }
 
     async fn recover_blocks(&self) {
-        self.in_recovery_mode.store(true, Ordering::SeqCst);
         RECOVERY_GAUGE.set_with(&[], 1);
         // reproduce the same batches (important for the commit phase)
         let mut certs = self.inner.read().get_all_quorum_certs_with_commit_info();
@@ -223,11 +221,11 @@ impl BlockStore {
                 info!("sending qc {} to execution, current commit round {}", qc.commit_info().round(), self.commit_root().round());
                 if let Err(e) = self.send_for_execution(qc.into_wrapped_ledger_info(), true).await {
                     error!("Error in try-committing blocks. {}", e.to_string());
+                    break;
                 }
             }
         }
         RECOVERY_GAUGE.set_with(&[], 0);
-        self.in_recovery_mode.store(false, Ordering::SeqCst);
     }
 
     /// Returns the WrappedLedgerInfo for fast_forward_sync.
@@ -315,7 +313,6 @@ impl BlockStore {
             is_validator,
             pending_blocks,
             enable_randomness,
-            in_recovery_mode: AtomicBool::new(false),
         };
 
         for block in blocks {
@@ -488,10 +485,6 @@ impl BlockStore {
                 commit_decision,
             );
         } else {
-            if self.in_recovery_mode.load(Ordering::SeqCst) {
-                info!("in recovery mode, skip finalize_order");
-                return Ok(());
-            }
             info!("send the blocks to execution {:?}", blocks_to_commit);
             self.execution_client
                 .finalize_order(
